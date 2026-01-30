@@ -22,16 +22,30 @@ getUsers();
 
 
 
-// document.getElementById("studentForm").addEventListener("submit", function (e) {
-//     e.preventDefault()
+document.getElementById("studentForm").addEventListener("submit", async function (e) {
+    e.preventDefault()
 
-//     const resData = new FormData(this)
-//     const studentObject = {
-//         ST_NAME: resData.get("name"),
-//         ST_EMAIL: resData.get("email"),
-//         ST_AGE: resData.get("age"),
-//         ST_CLASS: resData.get("class"),
-//         ST_DOB: resData.get("dob"),
-//     }
-//     console.log("submit", studentObject)
-// })
+    const resData = new FormData(this)
+    const studentObject = {
+        St_Name: resData.get("name"),
+        St_Email: resData.get("email"),
+        St_Age: resData.get("age"),
+        St_Class: resData.get("class"),
+        St_Dob: resData.get("dob"),
+    }
+    console.log("submit", studentObject)
+
+    // add data into supabase
+    const { data, error } = await supabase
+        .from("Student Data")
+        .insert([studentObject]) // 👈 array bhi zaroori hoti hai
+
+    if (error) {
+        console.error("Supabase Error:", error.message)
+        alert("Insert failed ❌")
+        return
+    }
+
+    alert("Data inserted successfully ✅")
+    getUsers();
+})
