@@ -14,7 +14,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const SUPABASE_URL = "https://nbzlxxpoaoozjmlthbgm.supabase.co";
 
 // Supabase ka public (anon) key
-let ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+let ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iemx4eHBvYW9vemptbHRoYmdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MDI1NzMsImV4cCI6MjA3ODk3ODU3M30.asMOEZ9Sa5RAum0DMQ1XasN8c8lzXBpqZKEwF2NW9aA";
 
 
 // ===============================
@@ -40,7 +40,7 @@ async function getUsers() {
     // Agar error aaye
     if (error) {
         console.error("Fetch Error:", error);
-    } 
+    }
     // Agar data mil jaye
     else {
         console.log("All Students:", data);
@@ -157,3 +157,123 @@ let deleteUser = async () => {
 
 // Console / button se call karne ke liye
 window.deleteUser = deleteUser
+
+// ======================================= crud khtam
+// ======================================= Auth start
+// ================= SIGN UP =================
+document
+    .getElementById("signupForm")
+    .addEventListener("submit", async function (e) {
+        e.preventDefault()
+        // form submit par page reload hone se roknay ke liye
+
+        const formData = new FormData(this)
+        // poore form ka data utha liya (email, password)
+
+        const email = formData.get("email")
+        const password = formData.get("password")
+        // form ke inputs se values nikaal li
+
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+        })
+        // Supabase ko kaha: is email & password se naya user banao
+
+        if (error) {
+            alert(error.message)
+            // agar koi error aaye (email already hai, weak password etc)
+            return
+        }
+
+        alert("Signup successful ✅")
+        // user successfully create ho gaya
+
+        console.log(data)
+        // signup ka response (user + session info)
+    })
+
+// ================= LOGIN =================
+document
+    .getElementById("loginForm")
+    .addEventListener("submit", async function (e) {
+        e.preventDefault()
+        // page reload rokna
+
+        const formData = new FormData(this)
+        const email = formData.get("email")
+        const password = formData.get("password")
+        // login form se email & password lena
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        })
+        // Supabase se check karwana ke user sahi hai ya nahi
+
+        if (error) {
+            alert(error.message)
+            // agar password ya email ghalat ho
+            return
+        }
+
+        alert("Login successful 🎉")
+        // user login ho chuka hai
+
+        console.log(data.user)
+        // yahan logged-in user ki info hoti hai
+    })
+
+// ================= LOGOUT =================
+async function logout() {
+    const { error } = await supabase.auth.signOut()
+    // current user ka session khatam kar deta hai
+
+    if (error) {
+        alert(error.message)
+        return
+    }
+
+    alert("Logged out 👋")
+    // user successfully logout
+}
+
+// function ko global banana taake HTML se call ho sakay
+window.logout = logout
+
+
+
+// Supabase automatically yaad rakhta hai ke kaunsa user login hai,
+// hum sirf us se poochte hain: bhai user hai ya nahi?
+
+
+//  ye dono kaam supabase khud hei karey ga 
+
+// Page load par User check (MOST IMPORTANT)
+async function checkUser() {
+    const { data: { user }, } = await supabase.auth.getUser()
+
+    if (user) {
+        console.log("User login hai:", user.email)
+        // yahan tum dashboard dikha sakte ho
+    } else {
+        console.log("Koi user login nahi")
+        // yahan login page dikhao
+    }
+}
+window.checkUser = checkUser
+checkUser()
+
+
+// Auth state listener (REAL-TIME TRACKING)
+supabase.auth.onAuthStateChange((event, session) => {
+    console.log("Auth event:", event)
+
+    if (event === "SIGNED_IN") {
+        console.log("User login hua:", session.user.email)
+    }
+
+    if (event === "SIGNED_OUT") {
+        console.log("User logout ho gaya")
+    }
+})
