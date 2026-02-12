@@ -158,7 +158,8 @@ let deleteUser = async () => {
 // Console / button se call karne ke liye
 window.deleteUser = deleteUser
 
-// ======================================= crud khtam
+// ======================================= ######################### #### # # # # # Crud Khtam
+
 // ======================================= Auth start
 // ================= SIGN UP =================
 document
@@ -277,3 +278,103 @@ supabase.auth.onAuthStateChange((event, session) => {
         console.log("User logout ho gaya")
     }
 })
+
+// ##########################################################
+// SUPABASE STORAGE FILE UPLOAD (RLS FRIENDLY + CLEAN CODE)
+// ##########################################################
+
+document
+  .getElementById("uploadForm")
+  .addEventListener("submit", async function (e) {
+    e.preventDefault()
+
+    // -----------------------------
+    // File input se file lena
+    // -----------------------------
+    const fileInput = document.getElementById("fileInput")
+    const file = fileInput.files[0]
+
+    if (!file) {
+      alert("Pehle file select karo ❌")
+      return
+    }
+
+    // -----------------------------
+    // Current logged-in user lena
+    // -----------------------------
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      alert("User login nahi hai ❌")
+      return
+    }
+
+    // -----------------------------
+    // Unique + user-based file path
+    // har user apni folder mey file upload kare ga
+    // -----------------------------
+    const filePath = `${user.id}/${Date.now()}-${file.name}`
+
+    // -----------------------------
+    // File ko Supabase Storage mey upload karna
+    // -----------------------------
+    const { data, error } = await supabase.storage
+      .from("student_profiles")
+      .upload(filePath, file)
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    // -----------------------------
+    // File ka path database table mey save karna
+    // taake baad mey user ki image track ho sakey
+    // -----------------------------
+    await supabase.from("student_data").insert([
+      {
+        user_id: user.id,
+        profile_image: filePath,
+      },
+    ])
+
+    alert("File upload ho gai ✅")
+    console.log(data)
+
+    // -----------------------------
+    // Uploaded image show karna
+    // -----------------------------
+    showImage(filePath)
+  })
+
+// ##########################################################
+// UPLOADED IMAGE DISPLAY KARNA
+// ##########################################################
+
+function showImage(filePath) {
+  // Public bucket mey direct URL mil jata hai
+  const { data } = supabase.storage
+    .from("student_profiles")
+    .getPublicUrl(filePath)
+
+  document.getElementById("preview").src = data.publicUrl
+}
+
+
+
+// 🔧 Dashboard Steps (exact)
+
+// 1️⃣ Storage → Policies
+// 2️⃣ Bucket: student_profiles
+// 3️⃣ New Policy
+// 4️⃣ Operation: INSERT (upload) ✅
+// 5️⃣ Target role: authenticated
+// 6️⃣ Policy definition 👇 paste karo:
+
+// bucket_id = 'student_profiles'
+// AND auth.uid()::text = (storage.foldername(name))[1]
+
+
+// 7️⃣ Save ✅
