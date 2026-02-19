@@ -262,7 +262,7 @@ async function checkUser() {
         // yahan login page dikhao
     }
 }
-window.checkUser = checkUser
+window.checkUser = checkUser 
 checkUser()
 
 
