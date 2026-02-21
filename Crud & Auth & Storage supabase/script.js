@@ -97,36 +97,94 @@ document.getElementById("studentForm").addEventListener("submit", async function
 // 6️⃣ UPDATE DATA FUNCTION
 // ===============================
 
-let update = async () => {
+// let update = async () => {
 
-    // User se ID lena
-    let userId = prompt("Enter Student ID to Update", "1")
+//     // User se ID lena
+//     let userId = prompt("Enter Student ID to Update", "1")
 
-    // New name lena
-    let userName = prompt("Enter New Name", "Ali")
+//     // New name lena
+//     let userName = prompt("Enter New Name", "Ali")
 
-    // Supabase update query
+//     // Supabase update query
+//     const { data, error } = await supabase
+//         .from("Student Data")
+//         .update({ St_Name: userName })   // konsa column update karna
+//         .eq("id", Number(userId))        // kis row ka (WHERE id = ?)
+//         .select()                        // updated row return karne ke liye
+
+//     // Agar update fail ho
+//     if (error) {
+//         console.error("Update Error:", error.message)
+//         alert("Update failed ❌")
+//         return
+//     }
+
+//     // Update success
+//     alert("Data updated successfully ✅")
+//     getUsers()
+// }
+
+// // Console / button se call karne ke liye
+// window.update = update
+
+
+async function openUpdate(id) {
+    // Single user ka data fetch karo
     const { data, error } = await supabase
         .from("Student Data")
-        .update({ St_Name: userName })   // konsa column update karna
-        .eq("id", Number(userId))        // kis row ka (WHERE id = ?)
-        .select()                        // updated row return karne ke liye
+        .select("*")
+        .eq("id", id)
+        .single();
 
-    // Agar update fail ho
     if (error) {
-        console.error("Update Error:", error.message)
-        alert("Update failed ❌")
-        return
+        console.error(error);
+        return;
     }
 
-    // Update success
-    alert("Data updated successfully ✅")
-    getUsers()
+    // Input fields me data fill karo
+    document.getElementById("update-id").value = data.id;
+    document.getElementById("update-name").value = data.St_Name;
+    document.getElementById("update-age").value = data.St_Age;
+    document.getElementById("update-class").value = data.St_Class;
+
+    // Modal show karo
+    document.getElementById("updateModal").style.display = "flex";
 }
 
-// Console / button se call karne ke liye
-window.update = update
+document.getElementById("updateForm").addEventListener("submit", async function (e) {
 
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    const userId = formData.get("id");
+
+    const updateObject = {
+        St_Name: formData.get("St_Name"),
+        St_Age: formData.get("St_Age"),
+        St_Class: formData.get("St_Class"),
+    };
+
+    const { error } = await supabase
+        .from("Student Data")
+        .update(updateObject)
+        .eq("id", Number(userId));
+
+    if (error) {
+        alert("Update Failed ❌");
+        console.error(error);
+        return;
+    }
+
+    alert("Updated Successfully ✅");
+
+    closeModal();
+    getUsers(); // list refresh
+});
+
+function closeModal() {
+    document.getElementById("updateModal").style.display = "none";
+}
 
 // ===============================
 // 7️⃣ DELETE DATA FUNCTION
@@ -262,7 +320,7 @@ async function checkUser() {
         // yahan login page dikhao
     }
 }
-window.checkUser = checkUser 
+window.checkUser = checkUser
 checkUser()
 
 
@@ -284,82 +342,82 @@ supabase.auth.onAuthStateChange((event, session) => {
 // ##########################################################
 
 document
-  .getElementById("uploadForm")
-  .addEventListener("submit", async function (e) {
-    e.preventDefault()
+    .getElementById("uploadForm")
+    .addEventListener("submit", async function (e) {
+        e.preventDefault()
 
-    // -----------------------------
-    // File input se file lena
-    // -----------------------------
-    const fileInput = document.getElementById("fileInput")
-    const file = fileInput.files[0]
+        // -----------------------------
+        // File input se file lena
+        // -----------------------------
+        const fileInput = document.getElementById("fileInput")
+        const file = fileInput.files[0]
 
-    if (!file) {
-      alert("Pehle file select karo ❌")
-      return
-    }
+        if (!file) {
+            alert("Pehle file select karo ❌")
+            return
+        }
 
-    // -----------------------------
-    // Current logged-in user lena
-    // -----------------------------
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+        // -----------------------------
+        // Current logged-in user lena
+        // -----------------------------
+        const {
+            data: { user },
+        } = await supabase.auth.getUser()
 
-    if (!user) {
-      alert("User login nahi hai ❌")
-      return
-    }
+        if (!user) {
+            alert("User login nahi hai ❌")
+            return
+        }
 
-    // -----------------------------
-    // Unique + user-based file path
-    // har user apni folder mey file upload kare ga
-    // -----------------------------
-    const filePath = `${user.id}/${Date.now()}-${file.name}`
+        // -----------------------------
+        // Unique + user-based file path
+        // har user apni folder mey file upload kare ga
+        // -----------------------------
+        const filePath = `${user.id}/${Date.now()}-${file.name}`
 
-    // -----------------------------
-    // File ko Supabase Storage mey upload karna
-    // -----------------------------
-    const { data, error } = await supabase.storage
-      .from("student_profiles")
-      .upload(filePath, file)
+        // -----------------------------
+        // File ko Supabase Storage mey upload karna
+        // -----------------------------
+        const { data, error } = await supabase.storage
+            .from("student_profiles")
+            .upload(filePath, file)
 
-    if (error) {
-      alert(error.message)
-      return
-    }
+        if (error) {
+            alert(error.message)
+            return
+        }
 
-    // -----------------------------
-    // File ka path database table mey save karna
-    // taake baad mey user ki image track ho sakey
-    // -----------------------------
-    await supabase.from("student_data").insert([
-      {
-        user_id: user.id,
-        profile_image: filePath,
-      },
-    ])
+        // -----------------------------
+        // File ka path database table mey save karna
+        // taake baad mey user ki image track ho sakey
+        // -----------------------------
+        await supabase.from("student_data").insert([
+            {
+                user_id: user.id,
+                profile_image: filePath,
+            },
+        ])
 
-    alert("File upload ho gai ✅")
-    console.log(data)
+        alert("File upload ho gai ✅")
+        console.log(data)
 
-    // -----------------------------
-    // Uploaded image show karna
-    // -----------------------------
-    showImage(filePath)
-  })
+        // -----------------------------
+        // Uploaded image show karna
+        // -----------------------------
+        showImage(filePath)
+    })
 
 // ##########################################################
 // UPLOADED IMAGE DISPLAY KARNA
 // ##########################################################
 
 function showImage(filePath) {
-  // Public bucket mey direct URL mil jata hai
-  const { data } = supabase.storage
-    .from("student_profiles")
-    .getPublicUrl(filePath)
+    // Public bucket mey direct URL mil jata hai
+    const { data } = supabase.storage
+        .from("student_profiles")
+        .getPublicUrl(filePath)
 
-  document.getElementById("preview").src = data.publicUrl
+    document.getElementById("preview").src = data.publicUrl
 }
 
 
